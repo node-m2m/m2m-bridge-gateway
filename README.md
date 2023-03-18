@@ -76,7 +76,7 @@ device.connect(() => {
 })
 ```
 
-### Edge Server
+### Edge Device
 ```js
 const m2m = require('m2m')
 
