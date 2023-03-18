@@ -12,7 +12,7 @@
 const m2m = require('m2m')
 
 /***
- * tcp edge client
+ * edge client
  */
 
 let ec = new m2m.edge.client({port:8140, secure:true, restart:true})
@@ -81,7 +81,7 @@ device.connect(() => {
 const m2m = require('m2m')
 
 /***
- * tcp edge server
+ * edge device
  */
 
 const server = m2m.edge.createServer(8150) 
