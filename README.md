@@ -2,9 +2,6 @@
 ## M2M Brige Gateway
 ![](assets/m2m-gateway.svg)
 
-
-Instead of each client accessing directly the edge servers, we will create an edge gateway that will act as broker between the edge clients and the edge servers.  
-
 <br>
 
 ### Edge Client
