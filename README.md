@@ -95,19 +95,15 @@ server.dataSource('edge-data-source-1', (tcp) => {
 
 ```
 
-#### 3. Start the edge server application.
+#### 3. Start the edge device application.
 
 ```js
-$ node edge.js
+$ node device.js
 ```
 You should get a similar result as shown below.
 ```js
-voltage { type: 'voltage', value: '21' }
-temperature { type: 'temperature', value: '56' }
-voltage { type: 'voltage', value: '22' }
-temperature { type: 'temperature', value: '52' }
-voltage { type: 'voltage', value: '23' }
-temperature { type: 'temperature', value: '54' }
+edge-data-source-1 rcvd data { myData: 130 }
+
 
 ```
 
