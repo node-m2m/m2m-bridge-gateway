@@ -1,5 +1,5 @@
 
-## M2M Brige Gateway
+## M2M Bridge Gateway
 ![](assets/m2m-gateway.svg)
 
 <br>
@@ -17,7 +17,9 @@ const m2m = require('m2m')
 
 let ec = new m2m.edge.client({port:8140, secure:true, restart:true})
 
-ec.write('edge-data-source-1', {myData:130}, (data) => {
+let pl = {sensor:true, type:'temperature', value:24}
+
+ec.write('edge-data-source-1', pl, (data) => {
      console.log(data.toString())
 })
 
@@ -102,7 +104,7 @@ $ node device.js
 ```
 You should get a similar result as shown below.
 ```js
-edge-data-source-1 rcvd data { myData: 130 }
+edge-data-source-1 rcvd data {sensor:true, type:'temperature', value:24}
 
 
 ```
