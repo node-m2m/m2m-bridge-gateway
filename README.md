@@ -11,20 +11,24 @@
 ```js
 const m2m = require('m2m')
 
-/***
- * edge client
- */
+let user = new m2m.User()
 
-let ec = new m2m.edge.client({port:8140, secure:true, restart:true})
+user.connect(() => {
 
-let pl = {sensor:true, type:'temperature', value:24}
+     // edge client
+     let edge = new m2m.Edge()
 
-ec.write('edge-data-source-1', pl, (data) => {
-     console.log(data.toString())
-})
+     let ec = new edge.client({port:8140, restart:true})
 
-ec.on('error', (err) => {
-    console.log('error', err.message)
+     let pl = {sensor:true, type:'temperature', value:24}
+
+     ec.write('edge-data-source-1', pl, (data) => {
+          console.log(data.toString())
+     })
+
+     ec.on('error', (err) => {
+         console.log('error', err.message)
+     })
 })
 ```
 #### 3. Start your device application.
@@ -40,19 +44,22 @@ const m2m = require('m2m')
 // m2m client
 let client = new m2m.Client()
 
+// edge object
+let edge = new m2m.Edge()
+
 client.connect(() => {
 
     let device = client.accessDevice(300)
 
     // edge server
-    const server = m2m.edge.createServer(8140)
-
-    server.dataSource('edge-data-source-1', (tcp) => {
-        if(tcp.payload){
-            device.write('m2m-bridge-1', tcp.payload )
-            tcp.send('ack rcvd data')
-        }
-    })
+    edge.createServer(8140, (server) => {
+         server.dataSource('edge-data-source-1', (tcp) => {
+             if(tcp.payload){
+                 device.write('m2m-bridge-1', tcp.payload )
+                 tcp.send('ack rcvd data')
+             }
+         })
+    }) 
 })
 ```
 
@@ -63,10 +70,13 @@ const m2m = require('m2m')
 // m2m device 300
 let device = new m2m.Device(300)
 
+// edge object
+let edge = new m2m.Edge()
+
 device.connect(() => {
 
     // edge client
-    let ec = new m2m.edge.client({port:8150, secure:true, restart:true})
+    let ec = new edge.client({port:8150, restart:true})
 
     // m2m data source
     device.dataSource('m2m-bridge-1', (ws) => {
@@ -82,19 +92,22 @@ device.connect(() => {
 ```js
 const m2m = require('m2m')
 
-/***
- * edge device
- */
+let user = new m2m.User()
 
-const server = m2m.edge.createServer(8150) 
+user.connect(() => {
 
-server.dataSource('edge-data-source-1', (tcp) => {
-    if(tcp.payload){
-       console.log('edge-data-source-1 rcvd data', tcp.payload)
-       tcp.end() 
-    }
+     // edge device
+     let edge = new m2m.Edge()
+
+     edge.createServer(8150,  (server) => {
+          server.dataSource('edge-data-source-1', (tcp) => {
+              if(tcp.payload){
+                 console.log('edge-data-source-1 rcvd data', tcp.payload)
+                 tcp.end() 
+              }
+          })
+     })
 })
-
 ```
 
 #### 3. Start the edge device application.
