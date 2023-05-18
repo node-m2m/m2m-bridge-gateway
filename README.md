@@ -2,6 +2,10 @@
 ## M2M Bridge Gateway
 ![](assets/m2m-gateway.svg)
 
+Easily create any communication path based on your application demands or requirements. In this example, an edge client will try to access an edge server from a different network on a different region. The communication path will change from a local network to a public internet traversing a new region into the edge server network.
+
+All communication traffic from local network to public internet and vice versa are fully encrypted using TLS and a combination of standard public and private encryption methods.  
+
 <br>
 
 ### Edge Client
@@ -14,10 +18,9 @@ const m2m = require('m2m')
 let user = new m2m.User()
 
 user.connect(() => {
-
      // edge client
      let edge = new m2m.Edge()
-
+     
      let ec = new edge.client({port:8140, restart:true})
 
      let pl = {sensor:true, type:'temperature', value:24}
@@ -41,17 +44,15 @@ $ node device.js
 ```js
 const m2m = require('m2m')  
 
-// m2m client
 let client = new m2m.Client()
 
-// edge object
-let edge = new m2m.Edge()
-
 client.connect(() => {
-
+    // m2m client accessing m2m device 300
     let device = client.accessDevice(300)
 
     // edge server
+    let edge = new m2m.Edge()
+    
     edge.createServer(8140, (server) => {
          server.dataSource('edge-data-source-1', (tcp) => {
              if(tcp.payload){
@@ -67,24 +68,20 @@ client.connect(() => {
 ```js
 const m2m = require('m2m')  
 
-// m2m device 300
 let device = new m2m.Device(300)
 
-// edge object
-let edge = new m2m.Edge()
-
 device.connect(() => {
-
     // edge client
+    let edge = new m2m.Edge()
+    
     let ec = new edge.client({port:8150, restart:true})
 
-    // m2m data source
+    // m2m device/server data source
     device.dataSource('m2m-bridge-1', (ws) => {
         if(ws.payload){
             ec.write('edge-data-source-1', ws.payload)
         }
     })
-
 })
 ```
 
@@ -95,10 +92,9 @@ const m2m = require('m2m')
 let user = new m2m.User()
 
 user.connect(() => {
-
-     // edge device
+     // edge server
      let edge = new m2m.Edge()
-
+     
      edge.createServer(8150,  (server) => {
           server.dataSource('edge-data-source-1', (tcp) => {
               if(tcp.payload){
