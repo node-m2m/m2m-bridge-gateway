@@ -2,9 +2,9 @@
 ## M2M Bridge Gateway
 ![](assets/m2m-gateway.svg)
 
-Easily create any communication path based on your application demands or requirements. In this example, an edge client will try to access an edge server from a different network on a different region. The communication path will change from a local network to a public internet traversing a new region into the edge server network.
+In this example, an edge client will try to access an edge server from a local network on a different region. The communication path will change from a local network to a public internet traversing a new region and into the edge server local network.
 
-All communication traffic from local network to public internet and vice versa are fully encrypted using TLS and a combination of standard public and private encryption methods.  
+All communication traffic from local network to public internet and vice versa are fully encrypted using TLS and a hybrid encryption - a combination of standard public and private encryption methods.  
 
 <br>
 
