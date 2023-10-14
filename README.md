@@ -16,11 +16,9 @@ All communication traffic from local network to public internet and vice versa a
 const m2m = require('m2m')
 
 let user = new m2m.User()
+let edge = new m2m.Edge()
 
 user.connect(() => {
-     // edge client
-     let edge = new m2m.Edge()
-     
      let ec = new edge.client({port:8140, restart:true})
 
      let pl = {sensor:true, type:'temperature', value:24}
@@ -45,13 +43,11 @@ $ node device.js
 const m2m = require('m2m')  
 
 let client = new m2m.Client()
+let edge = new m2m.Edge()
 
 client.connect(() => {
     // m2m client accessing m2m device 300
     let device = client.accessDevice(300)
-
-    // edge server
-    let edge = new m2m.Edge()
     
     edge.createServer(8140, (server) => {
          server.dataSource('edge-data-source-1', (tcp) => {
@@ -69,11 +65,9 @@ client.connect(() => {
 const m2m = require('m2m')  
 
 let device = new m2m.Device(300)
+let edge = new m2m.Edge()
 
 device.connect(() => {
-    // edge client
-    let edge = new m2m.Edge()
-    
     let ec = new edge.client({port:8150, restart:true})
 
     // m2m device/server data source
@@ -90,11 +84,9 @@ device.connect(() => {
 const m2m = require('m2m')
 
 let user = new m2m.User()
+let edge = new m2m.Edge()
 
 user.connect(() => {
-     // edge server
-     let edge = new m2m.Edge()
-     
      edge.createServer(8150,  (server) => {
           server.dataSource('edge-data-source-1', (tcp) => {
               if(tcp.payload){
