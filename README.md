@@ -1,6 +1,6 @@
 
 ## M2M Bridge Gateway
-![](assets/m2m-gateway.svg)
+![](assets/m2m-gateway.png)
 
 In this example, an edge client will try to access an edge server from a local network on a different region. The communication path will change from a local network to a public internet traversing a new region and into the edge server local network.
 
@@ -20,80 +20,201 @@ $ node app.js
 ```js
 const m2m = require('m2m')
 
-let edge = new m2m.Edge()
+let edge = new m2m.Edge({name:'edge client'})
 
-m2m.connect(() => {
+let main = async () => {
+     await m2m.connect()
+     
+     /*********************
+     
+          Edge client Section
+     
+     *********************/
      let edgeClient = new edge.client({port:8140, restart:true})
-
-     let pl = {sensor:true, type:'temperature', value:24}
-
-     edgeClient.write('edge-data-source-1', pl, (data) => {
-          console.log(data.toString())
+     
+     edgeClient.on('ready', (result) => {
+          console.log('edge server 8140 ready', result) // should be true if up and false if down
+     })  
+     
+     edgeClient.on('error', (err) => {
+          console.log('edge client error', err.message)
+     })
+     
+     edgeClient.write('edge-data-source-1', 'sensor-1', (data) => {
+          console.log('write', data)
      })
 
-    edgeClient.on('error', (err) => {
-         console.log('error', err.message)
+     edgeClient.subscribe('edge-publish-data-1', (data) => {
+          console.log('sub', data)
+          if(data.value < 30){
+               edgeClient.write('edge-data-source-1', 'sensor-2')
+          }
+          else if(data.value > 105){
+               edgeClient.write('edge-data-source-1', 'sensor-1')
+          } 
      })
-})
+}
+
+main()
 ```
-### M2M Bridge Client
+### M2M Client Bridge
 ```js
 const m2m = require('m2m')
   
-let m2mClient = new m2m.Client()
-let edge = new m2m.Edge()
+let client = new m2m.Client({name:'m2m client bridge'})
+let edge = new m2m.Edge({name:'edge server'})
 
-m2m.connect(() => {
-    
-    edge.createServer(8140, (server) => {
-         server.dataSource('edge-data-source-1', (tcp) => {
-             if(tcp.payload){
-                 m2mClient.write(300, 'm2m-bridge-1', tcp.payload )
-                 tcp.send('ack rcvd data')
-             }
-         })
-    }) 
-})
+let currentValue = ''
+
+let main = async () => {
+     await m2m.connect()
+
+     /*********************
+     
+       M2M Client Section
+     
+     *********************/
+     let m2mClient = new client.access(300)
+     
+     m2mClient.subscribe('m2m-bridge-2', (data) => {
+          currentValue = data
+     })  
+
+     /*********************
+     
+       Edge Server Section
+     
+     *********************/
+     const edgeServer = edge.createServer(8140)
+
+     edgeServer.dataSource('edge-data-source-1', async (tcp) => {
+          let result = ''
+          // write 
+          if(tcp.payload){
+               result = await m2mClient.write('m2m-bridge-1', tcp.payload )
+          }
+          // read
+          else{
+               result = await m2mClient.read('m2m-bridge-1')
+          }
+          tcp.send(result)   
+     })
+     
+     edgeServer.publish('edge-publish-data-1', async (tcp) => {
+          tcp.send(currentValue)  
+     })  
+}
+
+main()
 ```
-### M2M Bridge Server
+### M2M Server Bridge
 ```js
 const m2m = require('m2m')  
 
 let m2mServer = new m2m.Server(300)
-let edge = new m2m.Edge()
+let edge = new m2m.Edge({name:'edge client'})
 
-m2m.connect(() => {
-    let edgeClient = new edge.client({port:8150, restart:true})
+let main = async () => {
+     await m2m.connect()
+     
+     /*********************
+     
+       Edge client Section
+     
+      *********************/
+     let edgeClient = new edge.client({port:8150, restart:true})
+     
+     edgeClient.on('ready', (result) => {
+          console.log('edge server 8150 ready', result) // should be true if up and false if down
+     })
+     
+     edgeClient.on('error', (err) => {
+          console.log('edge client error', err.message)
+     })    
+     
+     /*********************
+     
+       M2M Server Section
+     
+     *********************/
+     m2mServer.dataSource('m2m-bridge-1', async (ws) => {
+          let result = ''
+          // write
+          if(ws.payload){
+               result = await edgeClient.write('edge-data-source-1', ws.payload)
+          }
+          // read
+          else {
+               result = await edgeClient.read('edge-data-source-1')
+          }
+          ws.send(result)
+     })
+     
+     m2mServer.publish('m2m-bridge-2', async (ws) => {
+          let result = await edgeClient.read('edge-data-source-1')
+          ws.send(result)
+     })
+}
 
-    m2mServer.dataSource('m2m-bridge-1', (ws) => {
-        if(ws.payload){
-            edgeClient.write('edge-data-source-1', ws.payload)
-        }
-    })
-})
+main()
 ```
 ### Edge Server
 ```js
 const m2m = require('m2m')
 
-let edge = new m2m.Edge()
+let edge = new m2m.Edge({name:'edge server'})
 
-m2m.connect(() => {
-     edge.createServer(8150,  (server) => {
-          server.dataSource('edge-data-source-1', (tcp) => {
-              if(tcp.payload){
-                 console.log('edge-data-source-1 rcvd data', tcp.payload)
-                 tcp.end() 
-              }
-          })
+function sensor1(){
+  return 25 + Math.floor(Math.random() * 10)
+}
+
+function sensor2(){
+  return 100 + Math.floor(Math.random() * 10)
+}
+
+let currentSensor = 'sensor-1';
+
+let main = async () => {
+     await m2m.connect()
+     
+     /*********************
+     
+      Edge Server Section
+     
+     *********************/
+     const edgeServer = edge.createServer(8150)
+     
+     edgeServer.dataSource('edge-data-source-1', (tcp) => {
+          // write
+          if(tcp.payload){
+               currentSensor = tcp.payload
+               tcp.send({topic:tcp.topic, currentSensor:currentSensor})       
+          }
+          // read
+          else{
+               if(currentSensor === 'sensor-1'){
+                    tcp.send({topic:tcp.topic, sensor:currentSensor, value:sensor1()}) 
+               }
+               else if(currentSensor === 'sensor-2'){
+                    tcp.send({topic:tcp.topic, sensor:currentSensor, value:sensor2()}) 
+               }
+               else{
+                    tcp.send({topic:tcp.topic, result:'invalid sensor'}) 
+               }
+          }
      })
-})
+}
+
+main()
 ```
 On the **edge client**, you should see a similar result as shown below.
 ```js
-edge-data-source-1 rcvd data {sensor:true, type:'temperature', value:24}
-
-
+edge server 8140 ready true
+sub { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 32 }
+write { topic: 'edge-data-source-1', currentSensor: 'sensor-1' }
+sub { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 27 }
+sub { topic: 'edge-data-source-1', sensor: 'sensor-2', value: 101 }
+...
 ```
 
 
