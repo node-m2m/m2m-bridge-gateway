@@ -2,16 +2,16 @@
 ## M2M Bridge Gateway
 ![](assets/m2m-gateway.png)
 
-In this example, an edge client will try to access an edge server from a local network on a different region. The communication path will change from a local network to a public internet traversing a new region and into the edge server local network.
+In this example, an edge client from New York will try to access an edge server from Tokyo. The communication path will traverse a local network from New York through the public internet entering a new region then through a local network in Tokyo to access the edge server.
 
-All communication traffic from local network to public internet and vice versa are fully encrypted using TLS and a hybrid encryption - a combination of standard public and private encryption methods.  
+All communication traffic from local network to public internet and vice versa are fully encrypted using TLS and a combination of standard public and private encryption methods.  
 
 <br>
 
 
 
 #### 1. Create a project directory for each endpoint and install *m2m*.
-#### 2. Create an app.js file inside each project directory and copy each code below one by one.
+#### 2. Create an app.js file inside each project directory and copy each code below correspondingly to each endpoints.
 #### 3. Start each app.js application one by one.
 ```js
 $ node app.js
