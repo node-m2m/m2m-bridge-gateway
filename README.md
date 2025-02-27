@@ -2,11 +2,13 @@
 ## M2M Bridge Gateway
 ![](assets/m2m-gateway.png)
 
-In this example, an edge client from New York city will try to access an edge server from Tokyo city. The communication path will start from an edge client connecting to the m2m bridge client gateway located in New York through a private local area network. It will then connect through an m2m server gateway located in Tokyo traversing the public internet. Then finally connecting through a private local network to an edge server.  
+In this example, an edge client from New York city will try to access an edge server from Tokyo city.
 
-All communications traffic are fully encrypted using TLS and a combination of standard public and private encryption methods.  
+The communication path will start from an edge client connecting through an m2m client bridge gateway located in New York, US. It will then communicate through an m2m server bridge gateway located in Tokyo, Japan traversing the public internet. Then finally connecting to an edge server and accessing its available resources.  
 
-<br>
+All communications traffic along the path are fully encrypted using TLS and a combination of standard public and private encryption methods.  
+
+
 
 #### 1. Create a project directory for each endpoint and install *m2m*.
 #### 2. Copy the code correspondingly from each endpoint and save it as app.js file.
@@ -21,6 +23,7 @@ const m2m = require('m2m')
 let edge = new m2m.Edge({name:'edge client'})
 
 async function main (){
+
   await m2m.connect()
     
   /***************
@@ -38,12 +41,14 @@ async function main (){
     console.log('edge client error', error)
   })
   
-  edgeClient.write('edge-data-source-1', 'sensor-1', (data) => {
-    console.log('write', data)
-  })
+  let wd = await edgeClient.write('edge-data-source-1', 'sensor-1') 
+	console.log('write: sensor-1', wd)
+
+  let rd = await edgeClient.read('edge-data-source-1') 
+	console.log('read:', rd)
 
   edgeClient.subscribe('edge-publish-data-1', (data) => {
-    console.log('sub', data)
+    console.log('subscribe:', data)
     if(data.value < 30){
       edgeClient.write('edge-data-source-1', 'sensor-2')
     }
@@ -65,13 +70,14 @@ let edge = new m2m.Edge({name:'edge server'})
 let currentValue = ''
 
 async function main (){
+
   await m2m.connect()
 
-  /**************
+  /***************
  
      M2M Client
   
-   **************/
+   ***************/
   let m2mClient = new client.access(300) // m2m virtual port 300
   
   m2mClient.subscribe('m2m-bridge-2', (data) => {
@@ -87,6 +93,7 @@ async function main (){
 
   edgeServer.dataSource('edge-data-source-1', async (tcp) => {
     let result = ''
+
     // write 
     if(tcp.payload){
       result = await m2mClient.write('m2m-bridge-1', tcp.payload )
@@ -114,13 +121,14 @@ let m2mServer = new m2m.Server(300) // m2m virtual port 300
 let edge = new m2m.Edge({name:'edge client'})
 
 async function main (){
+
   await m2m.connect()
   
-  /**************
+  /***************
  
     Edge client
   
-   **************/
+   ***************/
   let edgeClient = new edge.client(8150) // port 8150 using localhost ip
   
   edgeClient.on('ready', (result) => {
@@ -131,21 +139,22 @@ async function main (){
     console.log('edge client error', error)
   })    
   
-  /**************
+  /***************
  
      M2M Server
   
-   **************/
+   ***************/
   m2mServer.dataSource('m2m-bridge-1', async (ws) => {
-  let result = ''
-  // write
-  if(ws.payload){
-    result = await edgeClient.write('edge-data-source-1', ws.payload)
-  }
-  // read
-  else {
-    result = await edgeClient.read('edge-data-source-1')
-  }
+    let result = ''
+
+    // write
+    if(ws.payload){
+      result = await edgeClient.write('edge-data-source-1', ws.payload)
+    }
+    // read
+    else {
+      result = await edgeClient.read('edge-data-source-1')
+    }
     ws.send(result)
   })
   
@@ -174,6 +183,7 @@ function sensor2(){
 }
 
 async function main (){
+
   await m2m.connect()
   
   /****************
@@ -184,6 +194,7 @@ async function main (){
   const edgeServer = edge.createServer(8150) // port 8150 using localhost ip
   
   edgeServer.dataSource('edge-data-source-1', (tcp) => {
+
     // write
     if(tcp.payload){
       currentSensor = tcp.payload
@@ -206,14 +217,16 @@ async function main (){
 
 main()
 ```
-On the **edge client**, you should see a similar result as shown below.
+On the **edge client** output result, you should see a similar result as shown below.
 ```js
 edge server 8140 ready true
-sub { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 32 }
-write { topic: 'edge-data-source-1', currentSensor: 'sensor-1' }
-sub { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 27 }
-sub { topic: 'edge-data-source-1', sensor: 'sensor-2', value: 101 }
+write: sensor-1 { topic: 'edge-data-source-1', currentSensor: 'sensor-1' }
+read: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 30 }
+subscribe: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 27 }
+subscribe: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 29 }
+subscribe: { topic: 'edge-data-source-1', sensor: 'sensor-2', value: 106 }
 ...
+
 ```
 
 
