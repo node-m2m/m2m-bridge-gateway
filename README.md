@@ -4,7 +4,7 @@
 
 In this example, an edge client from New York city will try to access an edge server from Tokyo city.
 
-The communication path will start from an edge client connecting through an m2m client bridge gateway located in New York, US. It will then communicate through an m2m server bridge gateway located in Tokyo, Japan traversing the public internet. Then finally connecting to an edge server and accessing its available resources.  
+The communication path will start from an edge client connecting through an m2m client bridge gateway located in New York city. It will then communicate through an m2m server bridge gateway located in Tokyo traversing the public internet. Then finally connecting to an edge server and accessing its available resources.  
 
 All communications traffic along the path are fully encrypted using TLS and a combination of standard public and private encryption methods.  
 
@@ -42,10 +42,10 @@ async function main (){
   })
   
   let wd = await edgeClient.write('edge-data-source-1', 'sensor-1') 
-	console.log('write: sensor-1', wd)
+  console.log('write: sensor-1', wd)
 
   let rd = await edgeClient.read('edge-data-source-1') 
-	console.log('read:', rd)
+  console.log('read:', rd)
 
   edgeClient.subscribe('edge-publish-data-1', (data) => {
     console.log('subscribe:', data)
