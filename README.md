@@ -1,10 +1,10 @@
 
 ## Cloud Bridge Gateway
-![](assets/m2m-gateway.png)
+![](assets/m2m-gateway.webp)
 
 In this example, an edge client from New York city will try to access an edge server from Tokyo city.
 
-The communication path will start from an edge client connecting through an m2m client bridge gateway located in New York city. It will then communicate through an m2m server bridge gateway located in Tokyo traversing the public internet. Then finally connecting to an edge server and accessing its available resources.  
+The communication path will start from an edge client connecting through a cloud client bridge gateway located in New York city. It will then communicate through a cloud server bridge gateway located in Tokyo traversing the public internet. Then finally connecting to an edge server and accessing its available resources.  
 
 All communications traffic along the path are fully encrypted using TLS and a combination of standard public and private encryption methods.  
 
@@ -60,11 +60,11 @@ async function main (){
 
 main()
 ```
-### M2M Client Bridge
+### Cloud Client Bridge
 ```js
 const m2m = require('m2m')
   
-let client = new m2m.Client({name:'m2m client bridge'})
+let client = new m2m.Client({name:'cloud client bridge'})
 let edge = new m2m.Edge({name:'edge server'})
 
 let currentValue = ''
@@ -75,7 +75,7 @@ async function main (){
 
   /***************
  
-     M2M Client
+     Cloud Client
   
    ***************/
   let m2mClient = new client.access(300) // m2m virtual port 300
@@ -112,7 +112,7 @@ async function main (){
 
 main()
 ```
-### M2M Server Bridge
+### Cloud Server Bridge
 ```js
 const m2m = require('m2m')  
 
@@ -141,7 +141,7 @@ async function main (){
   
   /***************
  
-     M2M Server
+     Cloud Server
   
    ***************/
   m2mServer.dataSource('m2m-bridge-1', async (ws) => {
