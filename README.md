@@ -1,5 +1,5 @@
 
-## M2M Bridge Gateway
+## Cloud Bridge Gateway
 ![](assets/m2m-gateway.png)
 
 In this example, an edge client from New York city will try to access an edge server from Tokyo city.
