@@ -235,7 +235,7 @@ async function main (){
 
 main()
 ```
-On the **edge client** output result, you should see a similar result as shown below.
+On the **edge client** output, you should see a similar result as shown below.
 ```js
 edge server 8145 ready true
 ec.write edge-data-source-1: { topic: 'edge-data-source-1', currentSensor: 'sensor-1' }
