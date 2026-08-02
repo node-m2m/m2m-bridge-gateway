@@ -20,42 +20,43 @@ $ node app.js
 ```js
 const m2m = require('m2m')
 
-let edge = new m2m.Edge({name:'edge client'})
+// Note: Create a standalone edge client 
 
 async function main (){
-
-  await m2m.connect()
-    
-  /***************
  
-     Edge client
-  
-   ***************/
-  let edgeClient = new edge.client(8140) // port 8140 using localhost ip
-  
-  edgeClient.on('ready', (result) => {
-    console.log('edge server 8140 ready', result) // should be true if up and false if down
-  })  
-  
-  edgeClient.on('error', (error) => {
-    console.log('edge client error', error)
-  })
-  
-  let wd = await edgeClient.write('edge-data-source-1', 'sensor-1') 
-  console.log('write: sensor-1', wd)
+	let edge = new m2m.Edge({name:'edge client'})
 
-  let rd = await edgeClient.read('edge-data-source-1') 
-  console.log('read:', rd)
+	await m2m.authenticate()
+   /***************************
 
-  edgeClient.subscribe('edge-publish-data-1', (data) => {
-    console.log('subscribe:', data)
-    if(data.value < 30){
-      edgeClient.write('edge-data-source-1', 'sensor-2')
-    }
-    else if(data.value > 105){
-      edgeClient.write('edge-data-source-1', 'sensor-1')
-    } 
-  })
+		New York Edge client
+
+	****************************/
+	let ec = new edge.client(8145) // access edge server port 8145 using localhost ip
+
+	ec.on('ready', (result) => {
+		console.log('edge server 8145 ready', result) 
+	})  
+
+	ec.on('error', (error) => {
+		console.log('edge client error', error)
+	})
+
+	let wd = await ec.write('edge-data-source-1', 'sensor-1') 
+	console.log('ec.write edge-data-source-1:', wd)
+
+	let rd = await ec.read('edge-data-source-1') 
+	console.log('ec.read edge-data-source-1:', rd)
+
+	ec.sub('edge-publish-data-1', (data) => {
+		console.log('ec.sub edge-publish-data-1:', data)
+		if(data.value < 30){
+		  	ec.write('edge-data-source-1', 'sensor-2')
+		}
+		else if(data.value > 100){
+		  	ec.write('edge-data-source-1', 'sensor-1')
+		} 
+	})
 }
 
 main()
@@ -63,51 +64,71 @@ main()
 ### Cloud Client Bridge
 ```js
 const m2m = require('m2m')
-  
-let client = new m2m.Client({name:'cloud client bridge'})
-let edge = new m2m.Edge({name:'edge server'})
 
-let currentValue = ''
+// Note: Create a cloud client with an edge sub component 
 
 async function main (){
 
-  await m2m.connect()
+	/**********************************************
 
-  /***************
- 
-     Cloud Client
-  
-   ***************/
-  let m2mClient = new client.access(300) // m2m virtual port 300
-  
-  m2mClient.subscribe('m2m-bridge-2', (data) => {
-    currentValue = data
-  })  
+		New York Cloud Client w/ Edge Component
 
-  /****************
- 
-     Edge Server
-  
-   ****************/
-  const edgeServer = edge.createServer(8140) // port 8140 using localhost ip
+	 **********************************************/
+	let cc = new m2m.Cloud({type:'client', name:'NY client bridge', location:'Paris'})
 
-  edgeServer.dataSource('edge-data-source-1', async (tcp) => {
-    let result = ''
+	let edge = new m2m.Edge({name:'NY edge server'})
 
-    // write 
-    if(tcp.payload){
-      result = await m2mClient.write('m2m-bridge-1', tcp.payload )
-    }
-    // read
-    else{
-      result = await m2mClient.read('m2m-bridge-1')
-    }
-    tcp.send(result)   
-  })
-  
-  edgeServer.publish('edge-publish-data-1', async (tcp) => {
-    tcp.send(currentValue)  
-  })  
+    await m2m.authenticate()
+
+	cc.on('error', (e) => {
+    	if(e.message){
+      		console.log('*cloud client error:', e.message)
+    	}
+		console.log('cloud client error:', e)
+  	})
+	
+	/**************************
+
+		New York Edge Server
+
+	 **************************/
+	let es = edge.createServer(8145) // port 8145 using localhost ip
+
+	es.publish('edge-publish-data-1', async (tcp) => {
+		try{
+			let result = await cc.read(400, 'tokyo-gateway-data-source') 
+			console.log('edge pub edge-publish-data-1 - cc read tokyo-gateway-data-source:', result)
+			tcp.send(result)
+		}
+		catch(e){
+			console.log('await pub edge-publish-data-1 - cc.read error:', e.message)
+		} 
+	})
+
+	es.dataSource('edge-data-source-1', async (tcp) => {
+		let result = ''
+		// write 
+		if(tcp.payload){
+			try{
+				result = await cc.write(400, 'tokyo-gateway-data-source', tcp.payload) 
+				console.log('cc write tokyo-gateway-data-source result', result) 
+			}
+			catch(e){
+				console.log('*cc write tokyo-gateway-data-source error:', e.message)
+			} 	
+		}
+		// read
+		else{
+		  	try{
+				result = await cc.read(400, 'tokyo-gateway-data-source')
+				console.log('cc read tokyo-gateway-data-source result', result) 
+			}
+			catch(e){
+				console.log('*cc read tokyo-gateway-data-source error:', e.message)
+			} 	
+		}
+		tcp.send(result)   
+	})
 }
 
 main()
@@ -116,52 +137,48 @@ main()
 ```js
 const m2m = require('m2m')  
 
-let m2mServer = new m2m.Server(300) // m2m virtual port 300
-
-let edge = new m2m.Edge({name:'edge client'})
-
+// Note: Create a cloud server with an edge sub component 
+ 
 async function main (){
 
-  await m2m.connect()
-  
-  /***************
- 
-    Edge client
-  
-   ***************/
-  let edgeClient = new edge.client(8150) // port 8150 using localhost ip
-  
-  edgeClient.on('ready', (result) => {
-    console.log('edge server 8150 ready', result) // should be true if up and false if down
-  })
-  
-  edgeClient.on('error', (error) => {
-    console.log('edge client error', error)
-  })    
-  
-  /***************
- 
-     Cloud Server
-  
-   ***************/
-  m2mServer.dataSource('m2m-bridge-1', async (ws) => {
-    let result = ''
+	/******************************************
 
-    // write
-    if(ws.payload){
-      result = await edgeClient.write('edge-data-source-1', ws.payload)
-    }
-    // read
-    else {
-      result = await edgeClient.read('edge-data-source-1')
-    }
-    ws.send(result)
-  })
-  
-  m2mServer.publish('m2m-bridge-2', async (ws) => {
-    let result = await edgeClient.read('edge-data-source-1')
-    ws.send(result)
-  })
+		Tokyo Cloud Server w/ Edge Component
+
+	*******************************************/
+	let cs = new m2m.Cloud({type:'server', port:400}) // 400 is the cloud server id or virtual port
+
+	let edge = new m2m.Edge({name:'Tokyo edge client'})
+
+	await m2m.authenticate()
+
+	/***********************
+
+		Tokyo Edge client
+
+	************************/
+	let ec = new edge.client(8150) // access edge server port 8150 using localhost ip
+
+	ec.on('ready', (result) => {
+		console.log('edge server 8150 ready', result) 
+	})
+
+	ec.on('error', (error) => {
+		console.log('edge client error', error)
+	})    
+
+	let result = ''
+	cs.dataSource('tokyo-gateway-data-source', async (ws) => { 
+		// write
+		if(ws.payload){
+		  	result = await ec.write('edge-data-source-1', ws.payload)
+		}
+		// read
+		else {
+		  	result = await ec.read('edge-data-source-1')
+		}
+		ws.send(result)
+	})
 }
 
 main()
@@ -170,61 +187,64 @@ main()
 ```js
 const m2m = require('m2m')
 
-let edge = new m2m.Edge({name:'edge server'})
-
 let currentSensor = 'sensor-1'
 
 function sensor1(){
-  return 25 + Math.floor(Math.random() * 10)
+  	return 25 + Math.floor(Math.random() * 10)
 }
 
 function sensor2(){
-  return 100 + Math.floor(Math.random() * 10)
+  	return 100 + Math.floor(Math.random() * 25)
 }
 
+// Note: Create a standalone edge server  
+
 async function main (){
+		
+	let edge = new m2m.Edge({name:'Tokyo edge server'})
 
-  await m2m.connect()
+  	await m2m.authenticate()
   
-  /****************
- 
-     Edge Server
-  
-   ****************/
-  const edgeServer = edge.createServer(8150) // port 8150 using localhost ip
-  
-  edgeServer.dataSource('edge-data-source-1', (tcp) => {
+	/***********************
 
-    // write
-    if(tcp.payload){
-      currentSensor = tcp.payload
-      tcp.send({topic:tcp.topic, currentSensor:currentSensor})       
-    }
-    // read
-    else{
-      if(currentSensor === 'sensor-1'){
-        tcp.send({topic:tcp.topic, sensor:currentSensor, value:sensor1()}) 
-      }
-      else if(currentSensor === 'sensor-2'){
-        tcp.send({topic:tcp.topic, sensor:currentSensor, value:sensor2()}) 
-      }
-      else{
-        tcp.send({topic:tcp.topic, result:'invalid sensor'}) 
-      }
-    }
-  })
+		Tokyo Edge Server
+
+ 	 ***********************/
+	let es = edge.createServer(8150) // port 8150 using localhost ip
+
+	es.dataSource('edge-data-source-1', (tcp) => {
+		// write
+		if(tcp.payload){
+		  	currentSensor = tcp.payload
+		  	tcp.send({topic:tcp.topic, currentSensor:currentSensor})       
+		}
+		// read
+		else{
+		  	if(currentSensor === 'sensor-1'){
+				tcp.send({topic:tcp.topic, sensor:currentSensor, value:sensor1()}) 
+		  	}
+		  	else if(currentSensor === 'sensor-2'){
+				tcp.send({topic:tcp.topic, sensor:currentSensor, value:sensor2()}) 
+		  	}
+		  	else{
+				tcp.send({topic:tcp.topic, result:'invalid sensor'}) 
+		  	}
+		}
+	})
 }
 
 main()
 ```
 On the **edge client** output result, you should see a similar result as shown below.
 ```js
-edge server 8140 ready true
-write: sensor-1 { topic: 'edge-data-source-1', currentSensor: 'sensor-1' }
-read: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 30 }
-subscribe: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 27 }
-subscribe: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 29 }
-subscribe: { topic: 'edge-data-source-1', sensor: 'sensor-2', value: 106 }
+edge server 8145 ready true
+ec.write edge-data-source-1: { topic: 'edge-data-source-1', currentSensor: 'sensor-1' }
+ec.read edge-data-source-1: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 34 }
+ec.sub edge-publish-data-1: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 26 }
+ec.sub edge-publish-data-1: { topic: 'edge-data-source-1', sensor: 'sensor-2', value: 105 }
+ec.sub edge-publish-data-1: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 32 }
+ec.sub edge-publish-data-1: { topic: 'edge-data-source-1', sensor: 'sensor-1', value: 25 }
+ec.sub edge-publish-data-1: { topic: 'edge-data-source-1', sensor: 'sensor-2', value: 100 }
 ...
 
 ```
