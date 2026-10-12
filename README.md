@@ -27,9 +27,9 @@ async function main (){
 	let edge = new m2m.Edge({name:'edge client'})
 
 	await m2m.authenticate()
-   /***************************
+	/***************************
 
-		New York Edge client
+	    New York Edge client
 
 	****************************/
 	let ec = new edge.client(8145) // access edge server port 8145 using localhost ip
@@ -68,10 +68,9 @@ const m2m = require('m2m')
 // Note: Create a cloud client with an edge sub component 
 
 async function main (){
-
 	/**********************************************
 
-		New York Cloud Client w/ Edge Component
+	    New York Cloud Client w/ Edge Component
 
 	 **********************************************/
 	let cc = new m2m.Cloud({type:'client', name:'NY client bridge', location:'Paris'})
@@ -89,7 +88,7 @@ async function main (){
 	
 	/**************************
 
-		New York Edge Server
+	    New York Edge Server
 
 	 **************************/
 	let es = edge.createServer(8145) // port 8145 using localhost ip
@@ -140,10 +139,9 @@ const m2m = require('m2m')
 // Note: Create a cloud server with an edge sub component 
  
 async function main (){
-
 	/******************************************
 
-		Tokyo Cloud Server w/ Edge Component
+	   Tokyo Cloud Server w/ Edge Component
 
 	*******************************************/
 	let cs = new m2m.Cloud({type:'server', port:400}) // 400 is the cloud server id or virtual port
@@ -154,7 +152,7 @@ async function main (){
 
 	/***********************
 
-		Tokyo Edge client
+	    Tokyo Edge client
 
 	************************/
 	let ec = new edge.client(8150) // access edge server port 8150 using localhost ip
@@ -207,7 +205,7 @@ async function main (){
   
 	/***********************
 
-		Tokyo Edge Server
+	    Tokyo Edge Server
 
  	 ***********************/
 	let es = edge.createServer(8150) // port 8150 using localhost ip
